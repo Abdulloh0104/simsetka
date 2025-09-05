@@ -1,1 +1,1 @@
-export const BOT_NAME = "Maishiy-xizmatlar";
+export const BOT_NAME = "Simsetkada_ishbor";
