@@ -1,0 +1,30 @@
+name: Check
+on: push
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install
+        run: npm ci
+      - name: Lint Tekshirish
+        run: npm run lint
+  test:
+    needs: [lint]
+    strategy:
+      matrix:
+        version: [18, 22, 20]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{matrix.version}}
+      - name: Install
+        run: npm ci
+      - name: Test Tekshirish
+        env:
+          PORT: ${{ secrets.PORT}}
+        run: npm run test
