@@ -40,11 +40,6 @@ export class BotUpdate {
     return this.botService.onStop(ctx);
   }
 
-  @On("location")
-  async onLocation(@Ctx() ctx: Context) {
-    await this.botService.onLocation(ctx);
-  }
-
   @On("text")
   async onText(@Ctx() ctx: Context) {
     return this.botService.onText(ctx);
@@ -54,7 +49,6 @@ export class BotUpdate {
   async onCommandHelp(@Ctx() ctx: Context) {
     await ctx.reply("Ertaga yordam beraman");
   }
-
   @On("message")
   async onMessage(@Ctx() ctx: Context) {
     console.log(ctx.botInfo);
@@ -62,5 +56,6 @@ export class BotUpdate {
     console.log(ctx.chat!.id);
     console.log(ctx.from);
     console.log(ctx.from!.id);
+    return this.botService.onMessage(ctx);
   }
 }

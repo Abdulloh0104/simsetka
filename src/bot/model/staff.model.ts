@@ -1,4 +1,4 @@
-import { Column, DataType, Model, Table } from "sequelize-typescript";
+import { AllowNull, Column, DataType, Model, Table } from "sequelize-typescript";
 
 interface IStaffCreation {
   user_id?: number | undefined;
@@ -47,66 +47,51 @@ export class Staff extends Model<Staff, IStaffCreation> {
     defaultValue: false,
   })
   declare status: boolean;
-//--------------------------------
-  @Column({
-    type: DataType.ENUM(
-      "SARTAROSH",
-      "GUZALLIK",
-      "ZARGAR",
-      "SOATSOZ",
-      "ETIKDOZ"
-    ),
-  })
-  declare occupation: string;
-
+  //--------------------------------
   @Column({
     type: DataType.STRING,
   })
   declare name: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.STRING(15),
   })
-  declare ustaxonaNomi: string;
+  declare age: string;
 
   @Column({
     type: DataType.STRING,
   })
-  declare address: string;
+  declare city: string;
 
   @Column({
     type: DataType.STRING,
   })
-  declare muljal: string;
+  declare is_convicted: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
   })
-  declare location: string;
+  declare note?: string;
 
   @Column({
-    type: DataType.TIME,
+    type: DataType.BIGINT,
+    allowNull: true, // null qiymatga ruxsat beradi
   })
-  declare start: string;
-
-  @Column({
-    type: DataType.TIME,
-  })
-  declare end: string;
-
-  @Column({
-    type: DataType.STRING,
-  })
-  declare avgClientTime: string;
-
-  @Column({
-    type: DataType.BOOLEAN,
-    defaultValue: false,
-  })
-  declare isApproved: boolean;
+  declare last_message_id?: number | null;
 
   @Column({
     type: DataType.STRING,
   })
   declare last_state: string;
+
+  @Column({
+    type: DataType.STRING,
+  })
+  declare employer: string;
+
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: true, // necha marta ariza topshirilgani
+  })
+  declare apply_count?: number | null;
 }

@@ -18,39 +18,14 @@ export class StaffUpdate {
     private readonly staffService: StaffService
   ) {}
 
-  @Action(/^loc_+\d+/)
-  async onClickLocation(@Ctx() ctx: Context) {
-    await this.staffService.onClickLocation(ctx);
-  }
-
   @Hears("RO'YXATDAN O'TISH")
   async onClickRegister(@Ctx() ctx: Context) {
     return this.staffService.onClickRegister(ctx);
   }
 
-  @Hears("Usta")
-  async onNewStaff(@Ctx() ctx: Context) {
-    return this.staffService.onNewStaff(ctx);
-  }
-
-  // @Hears("Mijoz")
-  // async onNewClient(@Ctx() ctx: Context) {
-  //   return this.staffService.onNewStaff(ctx);
-  // }
-
-  @Hears("Yangi manzil qo'shish")
-  async onNewAddress(@Ctx() ctx: Context) {
-    return this.staffService.onNewStaff(ctx);
-  }
-
-  // @Hears("Mening xodimlarim")
-  // async onMyAddresses(@Ctx() ctx: Context) {
-  //   return this.staffService.onMyAddresses(ctx);
-  // }
-
-  @Action(/^occ_+\d+_+[A-Z]+/)
-  async onClickOccupation(@Ctx() ctx: Context) {
-    await this.staffService.onClickOccupation(ctx);
+  @Hears("Mening xodimlarim")
+  async onMyAddresses(@Ctx() ctx: Context) {
+    return this.staffService.onNewWorkers(ctx);
   }
 
   @Hears("✅ TASDIQLASH")
@@ -63,20 +38,64 @@ export class StaffUpdate {
     return this.staffService.onCancel(ctx);
   }
 
-  @Hears("TEKSHIRISH")
-  async onCheck(@Ctx() ctx: Context) {
-    return this.staffService.onCheck(ctx);
-  }
+  @Action(/^note_+\d+/)
+  async onClickNote(@Ctx() ctx: Context) {
+    await this.staffService.onClickNote(ctx);
+  } // admin note qo'shishi uchun ishlataman
+
+  @Action(/^deleteNote_+\d+/)
+  async onClickDeleteNote(@Ctx() ctx: Context) {
+    await this.staffService.onClickDeleteNote(ctx);
+  } // admin note qo'shishi uchun ishlataman
 
   @Action(/^app_+\d+/)
-  async onClickApproved(@Ctx() ctx: Context) {
-    await this.staffService.onClickApproved(ctx);
-  }
+  async onClickHired(@Ctx() ctx: Context) {
+    await this.staffService.onClickHired(ctx);
+  } // admin ishga olganini bildirish uchun ishlatiladi
 
   @Action(/^del_+\d+/)
   async onClickDelete(@Ctx() ctx: Context) {
     await this.staffService.onClickDelete(ctx);
   }
 
-  
+  @Action(/^responsetouser_\d+_\d+$/)
+  async responseToUser(ctx: Context) {
+    return this.staffService.responseToUser(ctx);
+  }
+
+  @Action(/^city_.+_\d+$/)
+  async onClickCity(@Ctx() ctx: Context) {
+    return this.staffService.onClickCity(ctx);
+  }
+
+  @Action(/^convicted_.+_\d+$/)
+  async isConvicted(ctx: Context) {
+    return this.staffService.isConvicted(ctx);
+  }
+
+  @Hears("📄 Mening So'rovnomam")
+  async onMySurvey(ctx: Context) {
+    return this.staffService.onMySurvey(ctx);
+  }
+  @Hears("📤 Botni yuborish")
+  async onRefferal(ctx: Context) {
+    return this.staffService.onRefferal(ctx);
+  }
+  @Hears("🏢 Korxona haqida")
+  async onEnterprise(ctx: Context) {
+    return this.staffService.onEnterprise(ctx);
+  }
+  @Hears("ℹ️ Bot haqida")
+  async aboutBotUz(ctx: Context) {
+    return this.staffService.aboutBot(ctx);
+  }
+  @Hears("🔝 Asosiy menu")
+  async toMainMenu(ctx: Context) {
+    return this.staffService.toMainMenu(ctx);
+  }
+
+  @Hears("✏️ Adminga yozish")
+  async writeToAdmin(ctx: Context) {
+    return this.staffService.writeToAdmin(ctx);
+  }
 }
