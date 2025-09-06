@@ -12,10 +12,11 @@ async function start() {
       origin: (origin, callback) => {
         const allowedOrigins = [
           "http://localhost:8000",
+          "http://localhost:4000",
           "http://localhost:3000",
           "https://maishiytech.uz",
-          "https://api/maishiytech.uz",
-          "https://maishiytech.vercel.app",
+          "https://api/StroySetka.uz",
+          "https://stroy-setka.vercel.app",
         ];
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
@@ -39,3 +40,4 @@ start();
 
 
 //1550232639 Ristillakammi idlari
+// 1766424473 maniki;

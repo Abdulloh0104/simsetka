@@ -7,18 +7,16 @@ import {
   Start,
   Update,
 } from "nestjs-telegraf";
-import { Markup, Context } from "telegraf";
+import {Context } from "telegraf";
 import { BotService } from "./bot.service";
-import { UseFilters, UseGuards } from "@nestjs/common";
+import { UseFilters } from "@nestjs/common";
 import { TelegrafExceptionFilter } from "../common/filters/telegraf-exception.filter";
-import { AdminGuard } from "../common/guards/admin.guard";
 
 @Update()
 export class BotUpdate {
   constructor(private readonly botService: BotService) {}
 
   @UseFilters(TelegrafExceptionFilter)
-  @UseGuards(AdminGuard)
   @Command("admin")
   async onAdminCommand(@Ctx() ctx: Context) {
     await this.botService.admin_menu(ctx, `Xush kelibsiz, ADMIN`);
