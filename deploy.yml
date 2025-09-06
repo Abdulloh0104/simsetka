@@ -9,6 +9,11 @@ jobs:
     steps:
       - name: Kodni yuklash
         uses: actions/checkout@v4
+       - name: Node.js versiyasini o‘rnatish
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.11.0'
+          cache: 'npm'
       - name: SSH kalitni sozlash
         run: |
           mkdir -p ~/.ssh
