@@ -19,8 +19,16 @@ jobs:
         env:
           HOST: ${{ secrets.HOST }}
           USER: ${{ secrets.USERNAME }}
-          APP_DIR: /ci_cd
+          APP_DIR: /simsetka
           PORT: ${{ secrets.PORT }}
+          PG_HOST: ${{ secrets.PG_HOST }}
+          PG_PORT: ${{ secrets.PG_PORT }}
+          PG_USER: ${{ secrets.PG_USER }}
+          PG_PASSWORD: ${{ secrets.PG_PASSWORD }}
+          PG_DB: ${{ secrets.PG_DB }}
+          ADMIN: ${{ secrets.ADMIN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          GROUP_ID: ${{ secrets.GROUP_ID }}
         run: |
           ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
           ssh $USER@$HOST "

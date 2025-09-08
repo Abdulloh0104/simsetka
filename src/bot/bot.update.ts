@@ -19,7 +19,7 @@ export class BotUpdate {
   @UseFilters(TelegrafExceptionFilter)
   @Command("admin")
   async onAdminCommand(@Ctx() ctx: Context) {
-    await this.botService.admin_menu(ctx, `Xush kelibsiz, ADMIN`);
+    await this.botService.admin_menu(ctx);
   }
 
   @Start()

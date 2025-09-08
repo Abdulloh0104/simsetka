@@ -451,7 +451,8 @@ export class BotService {
                   !("data" in ctx.callbackQuery) ||
                   !ctx.callbackQuery.data.startsWith("city_")
                 ) {
-                  return ctx.reply("❌ Iltimos, tugmadan foydalaning.");
+                  ctx.reply("❌ Iltimos, tugmadan foydalaning.");
+                  return;
                 }
 
                 const city = ctx.callbackQuery.data.replace("city_", "");
@@ -706,9 +707,16 @@ export class BotService {
   // ---------------------------------Staff-------------------------------
 
   // ---------------------------------Admin-------------------------------
-  async admin_menu(ctx: Context, menu_text = `<b>Admin menusi</b>`) {
+  async admin_menu(ctx: Context) {
     try {
-      await ctx.reply(menu_text, {
+      const user_id = ctx.from?.id;
+      if (user_id != Number(process.env.ADMIN!)) {
+        ctx.replyWithHTML("Kechirasiz faqat admin foyhdalanishi mumkin", {
+          ...Markup.keyboard(usersMainButtons).resize(),
+        });
+        return;
+      }
+      await ctx.reply(`Xush kelibsiz, ADMIN`, {
         parse_mode: "HTML",
         ...Markup.keyboard(adminMainButtons).oneTime().resize(),
       });

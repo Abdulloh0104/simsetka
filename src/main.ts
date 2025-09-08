@@ -41,3 +41,7 @@ start();
 
 //1550232639 Ristillakammi idlari
 // 1766424473 maniki;
+
+
+// Admins = -1002098319640;
+// Swimming = -1001160293408;
