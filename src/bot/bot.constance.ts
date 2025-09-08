@@ -8,7 +8,6 @@ export const adminMainButtons = [
   ["📤 Botni yuborish"],
 ];
 
-
 export const enterpriseButtons = [
   ["Sim ishlab chiqarish"],
   ["Dorojniy setka", "Qush setka"],
