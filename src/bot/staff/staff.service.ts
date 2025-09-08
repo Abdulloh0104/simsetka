@@ -277,12 +277,28 @@ export class StaffService {
 
   async onCancel(ctx: Context) {
     const user_id = ctx.from?.id;
-    await this.staffModel.destroy({ where: { user_id } });
-    await ctx.replyWithHTML(`Ro'yxatdan o'ting`, {
-      ...Markup.keyboard([["RO'YXATDAN O'TISH"]])
-        .oneTime()
-        .resize(),
-    });
+    const user = await this.staffModel.findByPk(user_id);
+    if (!user) {
+      await this.throwToStart(ctx);
+    }
+    if (
+      user?.apply_count != undefined &&
+      user?.apply_count != null &&
+      user?.apply_count >= 1
+    ) {
+      await ctx.replyWithHTML(`Ro'yxatdan o'ting`, {
+        ...Markup.keyboard([["RO'YXATDAN O'TISH", "🔝 Asosiy menu"]])
+          .oneTime()
+          .resize(),
+      });
+    } else {
+      await this.staffModel.destroy({ where: { user_id } });
+      await ctx.replyWithHTML(`Ro'yxatdan o'ting`, {
+        ...Markup.keyboard([["RO'YXATDAN O'TISH"]])
+          .oneTime()
+          .resize(),
+      });
+    }
   }
 
   async onConnectToAdmin(ctx: Context) {
