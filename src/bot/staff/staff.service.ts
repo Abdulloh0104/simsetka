@@ -664,6 +664,11 @@ export class StaffService {
             .oneTime()
             .resize(),
         });
+      } else if (user && user_id == Number(process.env.ADMIN!)) {
+        ctx.replyWithHTML("Kechirasiz faqat admin foyhdalanishi mumkin", {
+          ...Markup.keyboard(usersMainButtons).resize(),
+        });
+        return;
       } else {
         const workers = await this.staffModel.findAll({
           where: { last_state: "finish" },
