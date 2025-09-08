@@ -420,7 +420,7 @@ export class StaffService {
     }
 
     if (usta.employer && (role == "admin" || role == "admins")) {
-      about += `\n<b>EmployerS:</b> ${usta.employer}\n`;
+      about += `\n<b>Employers:</b> ${usta.employer}\n`;
     }
 
     return about;
