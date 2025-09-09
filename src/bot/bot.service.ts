@@ -28,6 +28,9 @@ export class BotService {
           last_name: ctx.from?.last_name!,
           lang: ctx.from?.language_code!,
         });
+        if (user_id != Number(process.env.ADMIN!)) {
+          await this.admin_menu(ctx);
+        }
         await ctx.replyWithHTML(`Ro'yxatdan o'ting`, {
           ...Markup.keyboard([["RO'YXATDAN O'TISH"]])
             .oneTime()
