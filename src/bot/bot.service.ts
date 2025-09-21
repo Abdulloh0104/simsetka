@@ -175,44 +175,6 @@ export class BotService {
       console.log(`error on onStop`, error);
     }
   }
-  // ================================
-  // MANIMCH KEREMAS O"CHIRVORAMAN
-  // ================================
-  // async onStaff(ctx: Context) {
-  //   try {
-  //     console.log("onStaff ishlavotti");
-  //     if ("avto" in ctx.message!) {
-  //       const user_id = ctx.from?.id;
-  //       const user = await this.staffModel.findByPk(user_id);
-  //       if (!user) {
-  //         await ctx.reply(`Siz Avval ro'yxatdan o'ting`, {
-  //           parse_mode: "HTML",
-  //           ...Markup.keyboard([["/start"]]).resize(),
-  //         });
-  //       } else {
-  //         const staff = await this.staffModel.findOne({
-  //           where: {
-  //             user_id,
-  //             last_state: { [Op.ne]: "finish" },
-  //           },
-  //           order: [["id", "DESC"]],
-  //         });
-  //         if (staff && staff.last_state == "year") {
-  //           staff.last_state = "finish";
-  //           await staff.save();
-  //           await ctx.reply(
-  //             "Usta ma'lumotlari Tasdiqlash uchun adminga yuborildi.",
-  //             {
-  //               parse_mode: "HTML",
-  //             }
-  //           );
-  //         }
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.log(`OnLocation Error`, error);
-  //   }
-  // }
 
   async onText(ctx: Context) {
     if ("text" in ctx.message! && ctx.message.chat.type == "private") {
@@ -300,23 +262,6 @@ export class BotService {
             );
           }
 
-          // // -----------------------Admin Ustaga javob yozishi--------------------
-
-          if (user.last_state.startsWith("responsetouser_")) {
-            const ustaId = user.last_state.split("_")[1];
-            await this.bot.telegram.sendMessage(
-              Number(ustaId),
-              `<b>Admin savolingizga javob berdi.</b>\n\n` + ctx.message.text,
-              {
-                parse_mode: "HTML",
-              }
-            );
-            user.last_state = "";
-            await user.save();
-            await ctx.replyWithHTML("Xabar foydalanuvchiga yuborildi.", {
-              ...Markup.keyboard(adminMainButtons).resize(),
-            });
-          }
           // ---------------------------------Staff-------------------------------
           const usta = await this.staffModel.findOne({
             where: {
@@ -529,171 +474,11 @@ export class BotService {
                     .oneTime(),
                 });
                 break;
-              case "writeToAdmin":
-                const userId = String(ctx.from?.id);
-                const user = await this.staffModel.findOne({
-                  where: { user_id: userId },
-                });
-                if (!user) {
-                  await this.staffService.throwToStart(ctx);
-                }
-                user!.last_state = "finish";
-                await user!.save();
-                const res =
-                  `<b>Foydalanuvchidan savol.</b>\n\n` +
-                  userInput +
-                  `\n\n${user!.name} ${user!.username ? `(@${user!.username})` : ""}|${user!.phone_number}) dan`;
-
-                await this.bot.telegram.sendMessage(
-                  Number(process.env.ADMIN!),
-                  res,
-                  {
-                    parse_mode: "HTML",
-                    reply_markup: {
-                      inline_keyboard: [
-                        [
-                          {
-                            text: `Javob berish`,
-                            callback_data: `responsetouser_${process.env.ADMIN!}_${user?.user_id}`,
-                          },
-                        ],
-                      ],
-                    },
-                  }
-                );
-                ctx.replyWithHTML(
-                  "📤 So'rovingiz adminga yuborildi, adminlar tez orada so'rovingizni ko'rib chiqib javob yozishadi. 🔜",
-                  {
-                    ...Markup.keyboard(usersMainButtons).resize(),
-                  }
-                );
-                break;
             }
           }
         }
       } catch (error) {
         console.log(`Error on Text`, error);
-      }
-    }
-  }
-  async onMessage(ctx: Context) {
-    if (ctx.message?.chat.type == "private") {
-      try {
-        const user_id = String(ctx.from?.id);
-        const user = await this.staffModel.findOne({ where: { user_id } });
-
-        if (!user) return this.staffService.throwToStart(ctx);
-
-        if (
-          ctx.from?.id == Number(process.env.ADMIN!) &&
-          user.last_state.startsWith("responsetouser_")
-        ) {
-          const ustaId = user.last_state.split("_")[1];
-
-          //Shotga keldim yana tuzatishim kere
-          if ("photo" in ctx.message!) {
-            // Foto yuborsa
-            const photo =
-              ctx.message.photo[ctx.message.photo.length - 1].file_id;
-            await this.bot.telegram.sendPhoto(Number(ustaId), photo, {
-              caption: `🖼 Admindan foto keldi \n${ctx.message.caption ? ctx.message.caption : ""}`,
-            });
-            user.last_state = "";
-            await user.save();
-            await ctx.replyWithHTML("Xabar foydalanuvchiga yuborildi.", {
-              ...Markup.keyboard(adminMainButtons).resize(),
-            });
-          } else if ("video" in ctx.message!) {
-            // Video yuborsa
-            const video = ctx.message.video.file_id;
-            await this.bot.telegram.sendVideo(Number(ustaId), video, {
-              caption: `🎥 Admindan video keldi \n${ctx.message.caption ? ctx.message.caption : ""}`,
-            });
-            user.last_state = "";
-            await user.save();
-            await ctx.replyWithHTML("Xabar foydalanuvchiga yuborildi.", {
-              ...Markup.keyboard(adminMainButtons).resize(),
-            });
-          } else {
-            await ctx.reply(
-              "❗Faqat matn, rasm yoki video yuborishingiz mumkin."
-            );
-          }
-        }
-
-        // faqat writeToAdmin holatida ishlaydi
-        if (user.last_state === "writeToAdmin") {
-          if ("photo" in ctx.message!) {
-            // Foto yuborsa
-            user!.last_state = "finish";
-            await user.save();
-            const photo =
-              ctx.message.photo[ctx.message.photo.length - 1].file_id;
-            await this.bot.telegram.sendPhoto(
-              Number(process.env.ADMIN!),
-              photo,
-              {
-                caption: `🖼 Foydalanuvchidan foto keldi 
-                \n${ctx.message.caption ? ctx.message.caption : ""}
-                \n${user!.name} ${user!.username ? `(@${user!.username})` : ""}|${user!.phone_number}) dan`,
-                parse_mode: "HTML",
-                reply_markup: {
-                  inline_keyboard: [
-                    [
-                      {
-                        text: `Javob berish`,
-                        callback_data: `responsetouser_${process.env.ADMIN!}_${user?.user_id}`,
-                      },
-                    ],
-                  ],
-                },
-              }
-            );
-            ctx.replyWithHTML(
-              "📤 So'rovingiz adminga yuborildi, adminlar tez orada so'rovingizni ko'rib chiqib javob yozishadi. 🔜",
-              {
-                ...Markup.keyboard(usersMainButtons).resize(),
-              }
-            );
-          } else if ("video" in ctx.message!) {
-            // Video yuborsa
-            user!.last_state = "finish";
-            await user.save();
-            const video = ctx.message.video.file_id;
-            await this.bot.telegram.sendVideo(
-              Number(process.env.ADMIN!),
-              video,
-              {
-                caption: `🎥 Foydalanuvchidan video keldi
-                \n${ctx.message.caption ? ctx.message.caption : ""}
-                \n${user!.name} ${user!.username ? `(@${user!.username})` : ""}|${user!.phone_number}) dan`,
-                parse_mode: "HTML",
-                reply_markup: {
-                  inline_keyboard: [
-                    [
-                      {
-                        text: `Javob berish`,
-                        callback_data: `responsetouser_${process.env.ADMIN!}_${user?.user_id}`,
-                      },
-                    ],
-                  ],
-                },
-              }
-            );
-            ctx.replyWithHTML(
-              "📤 So'rovingiz adminlarga yuborildi, adminlar tez orada so'rovingizni ko'rib chiqib javob yozishadi. 🔜",
-              {
-                ...Markup.keyboard(usersMainButtons).resize(),
-              }
-            );
-          } else {
-            await ctx.reply(
-              "❗Faqat matn, rasm yoki video yuborishingiz mumkin."
-            );
-          }
-        }
-      } catch (error) {
-        console.log(`Error on Message User`, error);
       }
     }
   }

@@ -94,8 +94,4 @@ export class StaffUpdate {
     return this.staffService.toMainMenu(ctx);
   }
 
-  @Hears("✏️ Adminga yozish")
-  async writeToAdmin(ctx: Context) {
-    return this.staffService.writeToAdmin(ctx);
-  }
 }

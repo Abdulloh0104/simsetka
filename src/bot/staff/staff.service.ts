@@ -507,10 +507,7 @@ export class StaffService {
         await this.throwToStart(ctx);
       } else {
         await ctx.replyWithHTML(aboutBotText, {
-          ...Markup.keyboard([
-            ["✏️ Adminga yozish"],
-            ["🔝 Asosiy menu"],
-          ]).resize(),
+          ...Markup.keyboard(usersMainButtons).resize(),
         });
       }
     } catch (error) {
@@ -538,25 +535,7 @@ export class StaffService {
       console.log(`Error on refferal: `, error);
     }
   }
-  async writeToAdmin(ctx: Context) {
-    try {
-      const user_id = String(ctx.from?.id);
-      const user = await this.staffModel.findOne({ where: { user_id } });
-      if (!user) {
-        await this.throwToStart(ctx);
-      } else {
-        await this.staffModel.update(
-          { last_state: "writeToAdmin" },
-          { where: { user_id } }
-        );
-        await ctx.replyWithHTML(`Savolingizni yozing ⬇️`, {
-          ...Markup.keyboard(["🔝 Asosiy menu"]).resize(),
-        });
-      }
-    } catch (error) {
-      console.log(`Error on user's toMainMenu: `, error);
-    }
-  }
+  
   async responseToUser(ctx: Context) {
     try {
       const contextAction = ctx.callbackQuery!["data"];

@@ -54,6 +54,5 @@ export class BotUpdate {
     console.log(ctx.chat!.id);
     console.log(ctx.from);
     console.log(ctx.from!.id);
-    return this.botService.onMessage(ctx);
   }
 }
