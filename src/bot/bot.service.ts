@@ -498,16 +498,21 @@ export class BotService {
   async admin_menu(ctx: Context) {
     try {
       const user_id = ctx.from?.id;
-      if (user_id != Number(process.env.ADMIN!)) {
-        ctx.replyWithHTML("Kechirasiz faqat admin foyhdalanishi mumkin", {
-          ...Markup.keyboard(usersMainButtons).resize(),
+      if (user_id == Number(process.env.ADMIN!)) {
+        await ctx.reply(`Xush kelibsiz, ADMIN`, {
+          parse_mode: "HTML",
+          ...Markup.keyboard(adminMainButtons).oneTime().resize(),
         });
-        return;
       }
-      await ctx.reply(`Xush kelibsiz, ADMIN`, {
-        parse_mode: "HTML",
-        ...Markup.keyboard(adminMainButtons).oneTime().resize(),
+
+      const user = await this.staffModel.findByPk(user_id);
+      if (!user || user.last_state == "finish") {
+        await this.staffService.throwToStart(ctx);
+      }
+      ctx.replyWithHTML("Kechirasiz faqat admin foyhdalanishi mumkin", {
+        ...Markup.keyboard(usersMainButtons).resize(),
       });
+      return;
     } catch (error) {
       console.log("Admin man_u sida xatolik", error);
     }
