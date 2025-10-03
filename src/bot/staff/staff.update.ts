@@ -58,11 +58,10 @@ export class StaffUpdate {
     await this.staffService.onClickDelete(ctx);
   }
 
-  @Action(/^responsetouser_\d+_\d+$/)
-  async responseToUser(ctx: Context) {
-    return this.staffService.responseToUser(ctx);
-  }
-
+  // @Action(/^responsetouser_\d+_\d+$/)
+  // async responseToUser(ctx: Context) {
+  //   return this.staffService.responseToUser(ctx);
+  // }
   @Action(/^city_.+_\d+$/)
   async onClickCity(@Ctx() ctx: Context) {
     return this.staffService.onClickCity(ctx);
@@ -71,6 +70,17 @@ export class StaffUpdate {
   @Action(/^convicted_.+_\d+$/)
   async isConvicted(ctx: Context) {
     return this.staffService.isConvicted(ctx);
+  }
+
+  @Action(/^calculate_.+$/)
+  async calculateUser(ctx: Context) {
+    console.log("udatedaman");
+    return this.staffService.calculateUser(ctx);
+  }
+
+  @Action(/^show$/)
+  async showUser(ctx: Context) {
+    return this.staffService.showUser(ctx);
   }
 
   @Hears("📄 Mening So'rovnomam")
@@ -93,5 +103,4 @@ export class StaffUpdate {
   async toMainMenu(ctx: Context) {
     return this.staffService.toMainMenu(ctx);
   }
-
 }

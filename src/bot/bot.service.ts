@@ -18,6 +18,9 @@ export class BotService {
 
   async start(ctx: Context) {
     try {
+      if (ctx.message?.chat.type == "supergroup") {
+        return;
+      }
       const user_id = ctx.from?.id;
       const user = await this.staffModel.findByPk(user_id);
       if (!user) {
@@ -28,8 +31,9 @@ export class BotService {
           last_name: ctx.from?.last_name!,
           lang: ctx.from?.language_code!,
         });
-        if (user_id != Number(process.env.ADMIN!)) {
+        if (user_id == Number(process.env.ADMIN!)) {
           await this.admin_menu(ctx);
+          return;
         }
         await ctx.replyWithHTML(`Ro'yxatdan o'ting`, {
           ...Markup.keyboard([["RO'YXATDAN O'TISH"]])
@@ -93,6 +97,9 @@ export class BotService {
 
   async onContact(ctx: Context) {
     try {
+      if (ctx.message?.chat.type == "supergroup") {
+        return;
+      }
       const user_id = ctx.from?.id;
       const user = await this.staffModel.findByPk(user_id);
       if (!user) {
@@ -119,7 +126,10 @@ export class BotService {
               .resize(),
           }
         );
-      } else if ("contact" in ctx.message!) {
+      } else if (
+        "contact" in ctx.message! &&
+        user.last_state == "phone_number"
+      ) {
         let phone = ctx.message.contact.phone_number;
         if (phone[0] != "+") {
           phone = "+" + phone;
@@ -127,6 +137,11 @@ export class BotService {
         user.phone_number = phone;
         user.last_state = "is_convicted";
         await user.save();
+        await ctx.replyWithHTML(
+          "📱 Telefon raqamingiz qabul qilindi.",
+          Markup.removeKeyboard()
+        );
+
         await ctx.replyWithHTML("⚖️ Avval sudlanganmisiz?", {
           reply_markup: {
             inline_keyboard: [
@@ -141,6 +156,9 @@ export class BotService {
           },
         }); // Telefon raqam qo'lda kiritiladigan bo'ldi
       }
+      //  await ctx.replyWithHTML("Ism va Famliyangizni kiriting", {
+      //    ...Markup.removeKeyboard(),
+      //  });
     } catch (error) {
       console.log(`error on Contact`, error);
     }
@@ -148,6 +166,9 @@ export class BotService {
 
   async onStop(ctx: Context) {
     try {
+      if (ctx.message?.chat.type == "supergroup") {
+        return;
+      }
       const user_id = ctx.from?.id;
       const user = await this.staffModel.findByPk(user_id);
       if (!user) {
@@ -177,8 +198,8 @@ export class BotService {
   }
 
   async onText(ctx: Context) {
-    if ("text" in ctx.message! && ctx.message.chat.type == "private") {
-      try {
+    try {
+      if ("text" in ctx.message! && ctx.message.chat.type == "private") {
         const user_id = ctx.from?.id;
         const user = await this.staffModel.findByPk(user_id);
         if (!user) {
@@ -186,7 +207,7 @@ export class BotService {
         } else {
           // 1) Admin qayd rejim
 
-          // 1) last_state = "noite_" bo'lgan ustani topamiz
+          // 1) last_state = "note_" bo'lgan ustani topamiz
           const newUsta = await this.staffModel.findOne({
             where: {
               last_state: {
@@ -208,7 +229,10 @@ export class BotService {
             await this.staffModel.update(
               {
                 last_state: "finish",
-                note: ctx.message.text,
+                note: target.note
+                  ? target.note +
+                    `\n${ctx.from?.first_name}: ${ctx.message.text}`
+                  : `${ctx.from?.first_name}: ${ctx.message.text}`,
               },
               { where: { user_id: targetUserId } }
             );
@@ -218,6 +242,36 @@ export class BotService {
               where: { user_id: targetUserId },
             });
             const form = await this.staffService.staffForm(target!, "admin");
+            if (target!.admin_message_id) {
+              await ctx.telegram.editMessageText(
+                process.env.GROUP_ID!,
+                target?.admin_message_id,
+                undefined,
+                form,
+                {
+                  parse_mode: "HTML",
+                  reply_markup: {
+                    inline_keyboard: [
+                      [
+                        {
+                          text: "Ish bermoq",
+                          callback_data: `app_${target!.user_id}`,
+                        },
+                        {
+                          text: "📝 Note",
+                          callback_data: `note_${target!.user_id}`,
+                        },
+                        {
+                          text: "📝 Note o'chirish",
+                          callback_data: `deleteNote_${target!.user_id}`,
+                        },
+                      ],
+                    ],
+                  },
+                }
+              );
+            }
+
             if (target!.last_message_id) {
               await ctx.telegram.editMessageText(
                 process.env.ADMIN!,
@@ -248,18 +302,20 @@ export class BotService {
               );
             }
             // 4) last_message_idni o'chiramiz
-            await this.staffModel.update(
-              {
-                last_message_id: null,
-              },
-              { where: { user_id: targetUserId } }
-            );
+            // await this.staffModel.update(
+            //   {
+            //     last_message_id: null,
+            //   },
+            //   { where: { user_id: targetUserId } }
+            // );
             await ctx.replyWithHTML(
-              `✅ Qayd saqlandi:\n\n<b>${target!.note}</b>`,
+              `✅ Qayd saqlandi:\n\n<b><code>${ctx.message.text}</code></b>`,
               {
                 ...Markup.keyboard(adminMainButtons).resize(),
               }
             );
+            console.log("await ctx.deleteMessage();");
+            await ctx.deleteMessage();
           }
 
           // ---------------------------------Staff-------------------------------
@@ -314,7 +370,7 @@ export class BotService {
                   return;
                 }
 
-                usta.age = userInput;
+                usta.age = Number(userInput);
                 usta.last_state = "city";
                 await usta.save();
                 await ctx.reply("🌆 Qaysi hududdansiz?", {
@@ -434,6 +490,12 @@ export class BotService {
                 usta.phone_number = phone;
                 usta.last_state = "is_convicted";
                 await usta.save();
+                await ctx.replyWithHTML(
+                  "📱 Telefon raqamingiz qabul qilindi.",
+                  Markup.removeKeyboard()
+                );
+
+                // await ctx.deleteMessage();
                 await ctx.reply("⚖️ Avval sudlanganmisiz?", {
                   reply_markup: {
                     inline_keyboard: [
@@ -477,9 +539,130 @@ export class BotService {
             }
           }
         }
-      } catch (error) {
-        console.log(`Error on Text`, error);
       }
+      if ("text" in ctx.message! && ctx.message.chat.type == "supergroup") {
+        const user_id = ctx.from?.id;
+        // 1) Admins guruhidagi adminlar uchun qayd rejim
+
+        // 1) last_state = "note_" bo'lgan ustani topamiz
+        const newUsta = await this.staffModel.findOne({
+          where: {
+            last_state: {
+              [Op.like]: "note_%", // Sequelize operator kerak bo‘ladi
+            },
+          },
+        });
+
+        if (newUsta) {
+          // const targetUserId = newUsta.last_state.split("_")[1];
+          // const targetAdminId = newUsta.last_state.split("_")[2];
+          const [_, targetUserId, targetAdminId] =
+            newUsta.last_state.split("_");
+
+          let target = await this.staffModel.findOne({
+            where: { user_id: targetUserId },
+          });
+          if (!target) {
+            await ctx.reply("❌ Qaytadan Note tugmasini bosib ko'ring");
+            return;
+          }
+
+          if (user_id != Number(targetAdminId)) {
+            await ctx.replyWithHTML("Siz hozir qayd qo'sha olmaysiz");
+            return;
+          }
+          // 2) Qaydni saqlaymiz
+          await this.staffModel.update(
+            {
+              last_state: "finish",
+              note: target.note
+                ? target.note + `\n${ctx.from?.first_name}: ${ctx.message.text}`
+                : `${ctx.from?.first_name}: ${ctx.message.text}`,
+            },
+            { where: { user_id: targetUserId } }
+          );
+
+          // 3) Admin uchun yangilash
+          target = await this.staffModel.findOne({
+            where: { user_id: targetUserId },
+          });
+          const form = await this.staffService.staffForm(target!, "admin");
+          if (target!.admin_message_id) {
+            console.log("On text update group message ok");
+            await ctx.telegram.editMessageText(
+              process.env.GROUP_ID!,
+              target?.admin_message_id,
+              undefined,
+              form,
+              {
+                parse_mode: "HTML",
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      {
+                        text: "Ish bermoq",
+                        callback_data: `app_${target!.user_id}`,
+                      },
+                      {
+                        text: "📝 Note",
+                        callback_data: `note_${target!.user_id}`,
+                      },
+                      {
+                        text: "📝 Note o'chirish",
+                        callback_data: `deleteNote_${target!.user_id}`,
+                      },
+                    ],
+                  ],
+                },
+              }
+            );
+            console.log("Group ok");
+          }
+          console.log("613 target!.last_message_id: ", target!.last_message_id);
+          if (target!.last_message_id) {
+            await ctx.telegram.editMessageText(
+              process.env.ADMIN!,
+              target?.last_message_id,
+              undefined,
+              form,
+              {
+                parse_mode: "HTML",
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      {
+                        text: "📝 Note",
+                        callback_data: `note_${target!.user_id}`,
+                      },
+                      {
+                        text: "📝 Note o'chirish",
+                        callback_data: `deleteNote_${target!.user_id}`,
+                      },
+                      {
+                        text: "❌ O'chirish",
+                        callback_data: `del_${target!.user_id}`,
+                      },
+                    ],
+                  ],
+                },
+              }
+            );
+            console.log("Admin ok");
+          }
+          // 4) last_message_idni o'chiramiz
+          // await this.staffModel.update(
+          //   {
+          //     last_message_id: null,
+          //   },
+          //   { where: { user_id: targetUserId } }
+          // );  o'chirsam kerak
+          await ctx.replyWithHTML(
+            `✅ Qayd saqlandi:\n\n<b><code>${ctx.message.text}</code></b>`
+          );
+        }
+      }
+    } catch (error) {
+      console.log(`Error on Text`, error);
     }
   }
   //---------------------------- Contact Button --------------------------
@@ -497,22 +680,29 @@ export class BotService {
   // ---------------------------------Admin-------------------------------
   async admin_menu(ctx: Context) {
     try {
+      if (ctx.message?.chat.type == "supergroup") {
+        return;
+      }
       const user_id = ctx.from?.id;
       if (user_id == Number(process.env.ADMIN!)) {
+        const user = await this.staffModel.findByPk(user_id);
+        if (user) {
+          user.is_convicted = "1";
+          user.note = "2";
+          user.save();
+        }
         await ctx.reply(`Xush kelibsiz, ADMIN`, {
           parse_mode: "HTML",
           ...Markup.keyboard(adminMainButtons).oneTime().resize(),
         });
+      } else {
+        const user = await this.staffModel.findByPk(user_id);
+        if (!user) {
+          await this.staffService.throwToStart(ctx);
+        }
+        ctx.replyWithHTML("Kechirasiz faqat admin foydalanishi mumkin");
+        return;
       }
-
-      const user = await this.staffModel.findByPk(user_id);
-      if (!user || user.last_state == "finish") {
-        await this.staffService.throwToStart(ctx);
-      }
-      ctx.replyWithHTML("Kechirasiz faqat admin foyhdalanishi mumkin", {
-        ...Markup.keyboard(usersMainButtons).resize(),
-      });
-      return;
     } catch (error) {
       console.log("Admin man_u sida xatolik", error);
     }
