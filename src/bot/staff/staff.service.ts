@@ -120,12 +120,14 @@ export class StaffService {
         where: { user_id: address_id },
       });
       if (usta) {
+        if (ctx.callbackQuery?.message?.chat.id == Number(process.env.ADMIN!)) {
+          usta.last_message_id = ctx.callbackQuery?.message?.message_id!;
+          await usta.save();
+        } else {
+          usta.admin_message_id = ctx.callbackQuery?.message?.message_id!;
+          await usta.save();
+        }
         usta.last_state = `note_${address_id}_${admin_id}`;
-        // usta.admin_message_id = ctx.callbackQuery?.message?.message_id!;
-        // console.log(
-        //   "usta.admin_message_id onClickNote = ",
-        //   ctx.callbackQuery?.message?.message_id!
-        // );
         await usta.save();
       }
 
@@ -159,8 +161,8 @@ export class StaffService {
 
         // Agar eski note bo‘lsa, text ga qo‘shamiz
         if (oldNote) {
-          text += `\n\n<b>Eski note:</b>\n<code>${oldNote.replace(`${ctx.from?.first_name!} :`, "").trim()}</code>`;
-        }
+          text += `\n\n<b>Eski note:</b>\n<code>${oldNote.replace(`${ctx.from?.first_name!}: `, "").trim()}</code>`;
+        } // shuyoqqa keldim
 
         // Hozirgi admin note'idan tashqari hammasini qayta saqlaymiz
         usta.note = adminNotes
@@ -199,13 +201,20 @@ export class StaffService {
           }
         }
         usta.note = newNote.join("\n");
-        usta.save();
+        await usta.save();
       }
-      // usta.note = undefined;
-      // usta.last_message_id =undefined!;
+
       // await usta.save();
       if (isChanged) {
         const text = await this.staffForm(usta!, "admin");
+
+        if (ctx.callbackQuery?.message?.chat.id == Number(process.env.ADMIN!)) {
+          usta.last_message_id = ctx.callbackQuery?.message?.message_id!;
+          await usta.save(); // keramikin ?
+        } else {
+          usta.admin_message_id = ctx.callbackQuery?.message?.message_id!;
+          await usta.save(); // keramikin ?
+        }
         await ctx.telegram.editMessageText(
           Number(process.env.ADMIN),
           usta.last_message_id!,
@@ -266,7 +275,8 @@ export class StaffService {
             },
           }
         );
-        console.log("3");
+      } else {
+        return;
       }
     } catch (error) {
       console.log(`onClickDeleteNote Error`, error);
@@ -277,6 +287,7 @@ export class StaffService {
     try {
       const contextAction = ctx.callbackQuery!["data"];
       const address_id = contextAction.split("_")[1];
+      const admin_id = ctx.from?.id;
       const name = ctx.from?.first_name;
 
       const usta = await this.staffModel.findOne({
@@ -284,6 +295,8 @@ export class StaffService {
       });
       if (!usta) return;
 
+      usta.admin_message_id = ctx.callbackQuery?.message?.message_id!;
+      await usta.save();
       // employer maydonini massivga aylantiramiz
       let employers: string[] = usta.employer ? usta.employer.split("\n") : [];
 
@@ -313,8 +326,8 @@ export class StaffService {
       const isHiredByMe = employers.length > 0;
 
       await ctx.telegram.editMessageText(
-        ctx.chat?.id!,
-        ctx.callbackQuery?.message?.message_id!,
+        Number(process.env.GROUP_ID!),
+        usta.admin_message_id,
         undefined,
         text,
         {
@@ -333,6 +346,34 @@ export class StaffService {
                 {
                   text: "📝 Note o'chirish",
                   callback_data: `deleteNote_${usta!.user_id}`,
+                },
+              ],
+            ],
+          },
+        }
+      );
+
+      await ctx.telegram.editMessageText(
+        Number(process.env.ADMIN),
+        usta.last_message_id!,
+        undefined,
+        text,
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "📝 Note",
+                  callback_data: `note_${usta!.user_id}`,
+                },
+                {
+                  text: "📝 Note o'chirish",
+                  callback_data: `deleteNote_${usta!.user_id}`,
+                },
+                {
+                  text: "❌ O'chirish",
+                  callback_data: `del_${usta!.user_id}`,
                 },
               ],
             ],
@@ -419,7 +460,6 @@ export class StaffService {
         await this.throwToStart(ctx);
       }
       await this.staffModel.update({ status: true }, { where: { user_id } });
-      console.log("contextMessage->", contextMessage);
       // await this.sendToAdmin(user?.phone_number!, contextMessage || null);
     } catch (error) {
       console.log(`error on Address`, error);
@@ -459,8 +499,6 @@ export class StaffService {
         );
         // message_id ni saqlaymiz
         await staff.update({ last_message_id: sentMsg.message_id });
-        console.log("last_message_id:", sentMsg.message_id);
-        console.log("sendToAdmin ok");
         return true;
       }
     } catch (error) {
@@ -474,7 +512,10 @@ export class StaffService {
       if (!staff || !staff.status) {
         return false;
       } else {
-        console.log(process.env.GROUP_ID);
+        let employers: string[] = staff.employer
+          ? staff.employer.split("\n")
+          : [];
+        const isHiredByMe = employers.length > 0;
         const sentMsg = await this.bot.telegram.sendMessage(
           process.env.GROUP_ID!,
           form,
@@ -484,7 +525,7 @@ export class StaffService {
               inline_keyboard: [
                 [
                   {
-                    text: "Ish bermoq",
+                    text: isHiredByMe ? "✅ Ishga olingan" : "Ish bermoq",
                     callback_data: `app_${staff.user_id}`,
                   },
                   {
@@ -502,7 +543,6 @@ export class StaffService {
         );
         // message_id ni saqlaymiz
         await staff.update({ admin_message_id: sentMsg.message_id });
-        console.log("sendToGroup ok");
         return true;
       }
     } catch (error) {
@@ -537,19 +577,18 @@ export class StaffService {
     }
 
     if (usta.createdAt) {
-      about += `So'rov sanasi: ${new Date(usta.updatedAt).toLocaleString(
-        "uz-UZ",
-        {
-          weekday: "short", // "Thu"
-          year: "numeric", // "2025"
-          month: "short", // "May"
-          day: "2-digit", // "15"
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        }
-      )}.\n`;
+      about += `Birinchi so'rov sanasi: \n${new Date(
+        usta.createdAt
+      ).toLocaleString("uz-UZ", {
+        weekday: "short", // "Thu"
+        year: "numeric", // "2025"
+        month: "short", // "May"
+        day: "2-digit", // "15"
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })}.\n`;
     }
 
     if (usta.note && role == "admin") {
@@ -1119,19 +1158,21 @@ export class StaffService {
           limit, // number of rows
           offset: (page - 1) * limit, // skip first 20 rows
         });
-        console.log("workers.length:", workers.length);
-        console.log("limit", limit);
-        if (workers.length == 0) {
+        const workersCount = await this.staffModel.count({
+          where: { last_state: "finish" },
+        });
+
+        if (workersCount == 0) {
           await ctx.replyWithHTML("Birorta Xodim topilmadi", {
             ...Markup.keyboard(adminMainButtons).oneTime().resize(),
           });
           // user.is_convicted = "1";
-          user.save();
-        } else if (workers.length <= limit) {
-          let count = (page - 1) * limit;
-          workers.forEach(async (worker) => {
-            const form = await this.staffForm(worker!, "admin");
-            count = count + 1;
+          // await user.save();
+        } else if (workersCount <= limit) {
+          // let count = (page - 1) * limit;
+          for (const worker of workers) {
+            const form = await this.staffForm(worker, "admin");
+            // count++;
             await this.sendToAdmin(worker.phone_number, form);
             // const sentMsg = await this.bot.telegram.sendMessage(
             //   process.env.ADMIN!,
@@ -1158,8 +1199,8 @@ export class StaffService {
             //     },
             //   }
             // );
-          });
-        } else if (workers.length > limit) {
+          }
+        } else if (workersCount > limit) {
           const afterWorkers = await this.staffModel.findAll({
             where: { last_state: "finish" },
             order: [[fn("LOWER", col("name")), "ASC"]],
@@ -1172,7 +1213,7 @@ export class StaffService {
             count = count + 1;
             text = text + `${count}-${worker.name}\n`;
           });
-          if (afterWorkers.length == 0) {
+          if (afterWorkers.length == 0 && page > 1) {
             await ctx.replyWithHTML(text, {
               reply_markup: {
                 inline_keyboard: [
@@ -1230,37 +1271,6 @@ export class StaffService {
             });
           }
         }
-
-        // let text = "";
-        // let count = (page - 1) * limit;
-        // workers.forEach(async (worker) => {
-        //   count = count + 1;
-        //   text = text + `${count}-${worker.name}\n`;
-        // });
-        // // const sent = kerakmas
-        // await ctx.replyWithHTML(text, {
-        //   reply_markup: {
-        //     inline_keyboard: [
-        //       [
-        //         {
-        //           text: "⬅️",
-        //           callback_data: `calculate_false`,
-        //         },
-        //         {
-        //           text: "Show",
-        //           callback_data: `show`,
-        //         },
-        //         {
-        //           text: "➡️",
-        //           callback_data: `calculate_true`,
-        //         },
-        //       ],
-        //     ],
-        //   },
-        // });
-        // // user.last_message_id = sent.message_id; kerakmas
-        // // user.save();
-        // // console.log("user.last_message_id", user.last_message_id);
       }
     } catch (error) {
       console.log(`error on onNewWorkers`, error);

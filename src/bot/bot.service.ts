@@ -178,7 +178,6 @@ export class BotService {
             .resize(),
         });
       } else if (user.status) {
-        console.log("keldim stop");
         user.status = false;
         user.phone_number = "";
         await user.save();
@@ -314,7 +313,6 @@ export class BotService {
                 ...Markup.keyboard(adminMainButtons).resize(),
               }
             );
-            console.log("await ctx.deleteMessage();");
             await ctx.deleteMessage();
           }
 
@@ -327,7 +325,7 @@ export class BotService {
             order: [["user_id", "DESC"]],
           });
           if (usta) {
-            const userInput = ctx.message.text;
+            const userInput = ctx.message.text.trim().replace(/\s+/g, " ");
             switch (usta.last_state) {
               case "name":
                 // 2 tadan kam yoki 30 dan uzun bo‘lsa
@@ -449,7 +447,6 @@ export class BotService {
 
               // 2️⃣ Shahar tanlash (faqat tugmadan)
               case "city":
-                console.log(ctx.callbackQuery);
                 if (
                   !ctx.callbackQuery ||
                   !("data" in ctx.callbackQuery) ||
@@ -568,7 +565,7 @@ export class BotService {
           }
 
           if (user_id != Number(targetAdminId)) {
-            await ctx.replyWithHTML("Siz hozir qayd qo'sha olmaysiz");
+            // await ctx.replyWithHTML("Siz hozir qayd qo'sha olmaysiz");
             return;
           }
           // 2) Qaydni saqlaymiz
@@ -588,7 +585,11 @@ export class BotService {
           });
           const form = await this.staffService.staffForm(target!, "admin");
           if (target!.admin_message_id) {
-            console.log("On text update group message ok");
+            let employers: string[] = target!.employer
+              ? target!.employer.split("\n")
+              : [];
+            const isHiredByMe = employers.length > 0;
+
             await ctx.telegram.editMessageText(
               process.env.GROUP_ID!,
               target?.admin_message_id,
@@ -600,7 +601,7 @@ export class BotService {
                   inline_keyboard: [
                     [
                       {
-                        text: "Ish bermoq",
+                        text: isHiredByMe ? "✅ Ishga olingan" : "Ish bermoq",
                         callback_data: `app_${target!.user_id}`,
                       },
                       {
@@ -616,9 +617,8 @@ export class BotService {
                 },
               }
             );
-            console.log("Group ok");
           }
-          console.log("613 target!.last_message_id: ", target!.last_message_id);
+
           if (target!.last_message_id) {
             await ctx.telegram.editMessageText(
               process.env.ADMIN!,
@@ -647,7 +647,6 @@ export class BotService {
                 },
               }
             );
-            console.log("Admin ok");
           }
           // 4) last_message_idni o'chiramiz
           // await this.staffModel.update(

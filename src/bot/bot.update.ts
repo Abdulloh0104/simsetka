@@ -24,7 +24,6 @@ export class BotUpdate {
 
   @Start()
   async onStart(@Ctx() ctx: Context) {
-    // console.log(ctx);
     return this.botService.start(ctx);
   }
 

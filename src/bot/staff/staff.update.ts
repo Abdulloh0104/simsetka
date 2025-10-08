@@ -74,7 +74,6 @@ export class StaffUpdate {
 
   @Action(/^calculate_.+$/)
   async calculateUser(ctx: Context) {
-    console.log("udatedaman");
     return this.staffService.calculateUser(ctx);
   }
 
